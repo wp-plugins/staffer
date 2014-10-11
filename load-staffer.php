@@ -1,11 +1,11 @@
 <?php
 /*
 	Plugin Name: Staffer
-	Plugin URI: http://www.edwardrjenkins.com/wordpress-plugins/staffer/
+	Plugin URI: https://www.edwardrjenkins.com/wordpress-plugins/staffer/
 	Description: A WordPress plugin that adds staff management and custom staff profile pages.
 	Author: Edward R. Jenkins
-	Version: 1.0
-	Author URI: http://edwardrjenkins.com
+	Version: 1.1
+	Author URI: https://edwardrjenkins.com
 	Text Domain: staffer
 	Domain Path: /lang
  */
@@ -45,6 +45,11 @@ function staffer_do_page() {
 					<p class="description"><?php _e('Set a custom Staffer page title, if desired. The default title is <code>Staff</code>. This title will be used as the archive page title and within breadcrumbs. Leave blank to use the default.', 'staffer'); ?></p>
 				</td>
 				</tr>
+				<tr valign="top"><th scope="row"><?php _e ('Staffer Label'); ?></th>
+				<td><input type="text" size="80" name="staffer[label]" value='<?php if ( isset ($stafferoptions['label'] ) ) { echo $stafferoptions['label']; } ?>' />
+					<p class="description"><?php _e('Set a custom label, if desired. This is shown in the admin panel and is used in the <code>title</code> tag. The default label is <code>Staff</code>. Leave blank to use the default.', 'staffer'); ?></p>
+				</td>
+				</tr>				
 				<tr valign="top"><th scope="row"><?php _e ('Staffer URL slug'); ?></th>
 				<td><input type="text" size="80" name="staffer[slug]" value='<?php echo $stafferoptions['slug']; ?>' />
 					<p class="description"><?php _e('Set a custom URL slug, if desired. The default slug is <code>staff</code>.<strong>Notice:</strong> Use lowercase only, and use no spaces, i.e., instead of using <code>Staff Pages</code>, use <code>staff-pages</code>. Leave blank to use the default.', 'staffer'); ?></p>
@@ -104,6 +109,8 @@ function staffer_validate($input) {
 	$input['disablecss'] = null;
 	if ( ! isset( $input['sidebar'] ) )
 	$input['sidebar'] = null;
+	if ( ! isset( $input['label'] ) )
+	$input['label'] = 'Staff';
 	if ( ! isset ($input['customwrapper']) )
 	$input['customwrapper'] = null;
 	if ( ! isset ($input['gridlayout']) )
@@ -113,6 +120,7 @@ function staffer_validate($input) {
 	//if ( ! isset ($input['slug'] ) ) {
 	$input['slug'] = sanitize_title_with_dashes ($input['slug']);
 	$input['ptitle'] = ucfirst ($input['ptitle']);
+	$input['label'] = ucfirst ($input['label']);
 	//} else {
 	//$input['slug'] = 'staff';
 	//}
@@ -127,6 +135,12 @@ function staffer_validate($input) {
 	function create_staff_cpt_staffer() {
 		$stafferoptions = get_option ('staffer');
 		$stafferslug = $stafferoptions['slug'];
+		// fixes title tag issue and adds label option
+		if ( !empty ($stafferoptions['label'] ) ) {
+		$stafferlabel = $stafferoptions['label'];
+		} else {
+		$stafferlabel = 'Staff';
+		}
 		$rewrite = array(
 		'slug'                => $stafferslug,
 		'with_front'          => true,
@@ -135,7 +149,7 @@ function staffer_validate($input) {
 		);
 		register_post_type('staff', array(
 			'labels' => array(
-			'name' => __('Staff'),
+			'name' => $stafferlabel,
 			'taxonomy' => 'department',
 			'singular_name' => __('Staff Member'),
 			'add_new_item' => __('Add New Staff Member'),
@@ -201,6 +215,9 @@ function staffer_staff_role_box($post) {
 				$value = get_post_meta($post->ID, 'staffer_staff_linkedin', true);
 				echo '<label for="staffer_staff_linkedin"><strong>LinkedIn</strong></label>';
 				echo '<input id="staffer_staff_linkedin" name="staffer_staff_linkedin" size="28" value="' . esc_attr($value) . '"><br>';
+				$value = get_post_meta($post->ID, 'staffer_staff_website', true);
+				echo '<label for="staffer_staff_website"><strong>Website</strong></label>';
+				echo '<input id="staffer_staff_website" name="staffer_staff_website" size="28" value="' . esc_attr($value) . '"><br>';
 				$value = get_post_meta($post->ID, 'staffer_staff_email', true);
 				echo '<label for="staffer_staff_email"><strong>Email</strong></label>';
 				echo '<input id="staffer_staff_email" name="staffer_staff_email" size="28" value="' . esc_attr($value) . '"><br>';
@@ -224,12 +241,14 @@ function staffer_staff_save_postdata($post_id) {
 				$gplus = ($_POST['staffer_staff_gplus']);
 				$twitter = ($_POST['staffer_staff_twitter']);
 				$linkedin = ($_POST['staffer_staff_linkedin']);
+				$website = ($_POST['staffer_staff_website']);
 				$email = ($_POST['staffer_staff_email']);
 				update_post_meta($post_ID, 'staffer_staff_title', $title);
 				update_post_meta($post_ID, 'staffer_staff_fb', $fb);
 				update_post_meta($post_ID, 'staffer_staff_gplus', $gplus);
 				update_post_meta($post_ID, 'staffer_staff_twitter', $twitter);
 				update_post_meta($post_ID, 'staffer_staff_linkedin', $linkedin);
+				update_post_meta($post_ID, 'staffer_staff_website', $website);
 				update_post_meta($post_ID, 'staffer_staff_email', $email);
 		}
 // sets template override for custom template use
@@ -265,3 +284,59 @@ function staffer_custom_styles() {
 						}
 						}
 add_action ('wp_head', 'staffer_custom_styles' );
+
+// flush rewrite rules on activation and deactivation
+function staffer_activate() {
+		$stafferoptions = get_option ('staffer');
+		$stafferslug = $stafferoptions['slug'];
+		// fixes title tag issue and adds label option
+		if ( !empty ($stafferoptions['label'] ) ) {
+		$stafferlabel = $stafferoptions['label'];
+		} else {
+		$stafferlabel = 'Staff';
+		}
+		$rewrite = array(
+		'slug'                => $stafferslug,
+		'with_front'          => true,
+		'pages'               => true,
+		'feeds'               => true,
+		);
+		// registers post type
+		register_post_type('staff', array(
+			'labels' => array(
+			'name' => $stafferlabel,
+			// for future release 'taxonomy' => 'department',
+			'singular_name' => __('Staff Member'),
+			'add_new_item' => __('Add New Staff Member'),
+			'edit_item' => 'Edit Staff Member',
+			'new_item' => 'New Staff Member',
+			'all_items' => 'All Staff Members',
+			'view_item' => 'View Staff Member',
+			'search_items' => 'Search Staff Members',
+			'not_found' => 'No Staff Members Found',
+			'not_found_in_trash' => 'No Staff Members in Trash',
+			),
+			'public' => true,
+			'has_archive' => true,
+			'show_in_menu' => true,
+			'menu_order' => '4',
+			'rewrite' => $rewrite,
+			'menu_icon' => 'dashicons-id',
+			'supports' => array(
+				'title',
+				'editor',
+				'revisions',
+				'custom-fields',
+				'thumbnail',
+				'excerpt'
+				)
+				));
+	// flush rewrite rules to prevent 404s
+	flush_rewrite_rules();
+}
+register_activation_hook( __FILE__, 'staffer_activate' );
+
+function staffer_deactivate() {
+	flush_rewrite_rules();
+}
+register_deactivation_hook( __FILE__, 'staffer_deactivate' );
