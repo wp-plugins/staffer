@@ -4,7 +4,7 @@
 	Plugin URI: https://www.edwardrjenkins.com/wordpress-plugins/staffer/
 	Description: A WordPress plugin that adds staff management and custom staff profile pages.
 	Author: Edward R. Jenkins
-	Version: 1.1
+	Version: 1.2
 	Author URI: https://edwardrjenkins.com
 	Text Domain: staffer
 	Domain Path: /lang
@@ -150,7 +150,7 @@ function staffer_validate($input) {
 		register_post_type('staff', array(
 			'labels' => array(
 			'name' => $stafferlabel,
-			'taxonomy' => 'department',
+			// future release 'taxonomy' => 'department',
 			'singular_name' => __('Staff Member'),
 			'add_new_item' => __('Add New Staff Member'),
 			'edit_item' => 'Edit Staff Member',
@@ -176,8 +176,6 @@ function staffer_validate($input) {
 				'excerpt'
 				)
 				));
-				// flush rewrite rules
-				flush_rewrite_rules();
 				}
 add_action ('init', 'create_staff_cpt_staffer' );
 
@@ -287,50 +285,7 @@ add_action ('wp_head', 'staffer_custom_styles' );
 
 // flush rewrite rules on activation and deactivation
 function staffer_activate() {
-		$stafferoptions = get_option ('staffer');
-		$stafferslug = $stafferoptions['slug'];
-		// fixes title tag issue and adds label option
-		if ( !empty ($stafferoptions['label'] ) ) {
-		$stafferlabel = $stafferoptions['label'];
-		} else {
-		$stafferlabel = 'Staff';
-		}
-		$rewrite = array(
-		'slug'                => $stafferslug,
-		'with_front'          => true,
-		'pages'               => true,
-		'feeds'               => true,
-		);
-		// registers post type
-		register_post_type('staff', array(
-			'labels' => array(
-			'name' => $stafferlabel,
-			// for future release 'taxonomy' => 'department',
-			'singular_name' => __('Staff Member'),
-			'add_new_item' => __('Add New Staff Member'),
-			'edit_item' => 'Edit Staff Member',
-			'new_item' => 'New Staff Member',
-			'all_items' => 'All Staff Members',
-			'view_item' => 'View Staff Member',
-			'search_items' => 'Search Staff Members',
-			'not_found' => 'No Staff Members Found',
-			'not_found_in_trash' => 'No Staff Members in Trash',
-			),
-			'public' => true,
-			'has_archive' => true,
-			'show_in_menu' => true,
-			'menu_order' => '4',
-			'rewrite' => $rewrite,
-			'menu_icon' => 'dashicons-id',
-			'supports' => array(
-				'title',
-				'editor',
-				'revisions',
-				'custom-fields',
-				'thumbnail',
-				'excerpt'
-				)
-				));
+	create_staff_cpt_staffer();
 	// flush rewrite rules to prevent 404s
 	flush_rewrite_rules();
 }
