@@ -4,7 +4,7 @@
 	Plugin URI: https://www.edwardrjenkins.com/wordpress-plugins/staffer/
 	Description: A WordPress plugin that adds staff management and custom staff profile pages.
 	Author: Edward R. Jenkins
-	Version: 1.2
+	Version: 1.3
 	Author URI: https://edwardrjenkins.com
 	Text Domain: staffer
 	Domain Path: /languages
