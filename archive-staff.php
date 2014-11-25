@@ -24,6 +24,15 @@
 			<h2 class="staffer-archive-page-title"><?php post_type_archive_title(); ?></h2>
 			<?php } ?>
 
+			<?php
+				// adds description if present
+				$stafferdescription = $stafferoptions['sdesc'];
+				if ($stafferdescription != '') { ?>
+				<div class="staffer-page-description">
+					<?php echo wpautop( $stafferdescription ); ?>
+				</div>
+			<?php } ?>
+
 			
 		<?php
 			// chooses between the grid and list layout
@@ -37,7 +46,7 @@
 				?>
 				
 	<?php
-			if ($the_query->max_num_pages > 1) { ?>
+			if ($wp_query->max_num_pages > 1) { ?>
 			<div class="staffer-navigation">
 			<?php posts_nav_link(); ?>
 			</div>
@@ -54,8 +63,4 @@
 			include ( plugin_dir_path (__FILE__) . 'inc/end-wrapper.php');
 			}
 			?>
-<?php if (isset ($stafferoptions['sidebar'] ) ) {
-	get_sidebar();
-	}
-	?>
 <?php get_footer(); ?>

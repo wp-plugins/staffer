@@ -54,6 +54,18 @@ You may seek community support within the WordPress.org forums. I will try to mo
 4. Staff profile editor
 
 == Changelog ==
+= 1.3 =
+= November 25, 2014 =
+* fixed issue with permalinks not refreshing automatically
+* added full bio option
+* fixed blank breadcrumbs issue
+* added phone number field
+* added German and Spanish translations
+* fixed post per page issue
+* fixed issue when pretty permalinks are disabled
+* added link to main page from admin menu
+* added taxonomy
+* removed sidebar option
 = 1.2 =
 = October 11, 2014 =
 * fixes custom post type conflict
@@ -68,6 +80,9 @@ You may seek community support within the WordPress.org forums. I will try to mo
 * Initial release
 
 == Upgrade Notice ==
+= 1.3 =
+Adds taxonomy, fixes permalink bugs
+Other misc. fixes.
 = 1.2 =
 Fixes custom post type conflict
 = 1.1 =
