@@ -54,6 +54,9 @@ You may seek community support within the WordPress.org forums. I will try to mo
 4. Staff profile editor
 
 == Changelog ==
+= 1.3.1 =
+= December 10, 2014 =
+* fixed department slug 404 issue
 = 1.3 =
 = November 25, 2014 =
 * fixed issue with permalinks not refreshing automatically
