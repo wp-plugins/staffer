@@ -4,8 +4,8 @@
 	Plugin URI: https://www.edwardrjenkins.com/wordpress-plugins/staffer/
 	Description: A WordPress plugin that adds staff management and custom staff profile pages.
 	Author: Edward R. Jenkins
-	Version: 1.3.2
-	Author URI: https://edwardrjenkins.com
+	Version: 1.3.3
+	Author URI: https://www.edwardrjenkins.com/
 	Text Domain: staffer
 	Domain Path: /languages
  */
@@ -48,6 +48,12 @@ function staffer_do_page() {
 					<tr valign="top"><th scope="row"><?php _e ('Staff Layout', 'staffer'); ?></th>
 					<td><input name="staffer[gridlayout]" type="checkbox" value="1" <?php checked(true, $stafferoptions['gridlayout']); ?> />
 						<p class="description"><?php _e('Check this to use the staff grid layout.', 'staffer'); ?></p>
+					</td>
+					</tr>
+
+					<tr valign="top"><th scope="row"><?php _e ('Manual Mode', 'staffer'); ?></th>
+					<td><input name="staffer[manual_mode]" type="checkbox" value="1" <?php checked(true, $stafferoptions['manual_mode']); ?> />
+						<p class="description"><?php _e('Check to disable the main Staffer archive page. Useful if you want to solely use shortcodes to display lists of staff members. For more information on shortcodes, please read the <a href="https://www.edwardrjenkins.com/wordpress-plugins/staffer/">Staffer documentation</a>.', 'staffer'); ?></p>
 					</td>
 					</tr>
 
@@ -145,6 +151,8 @@ function staffer_validate($input) {
 	$input['customwrapper'] = null;
 	if ( ! isset ($input['gridlayout']) )
 	$input['gridlayout'] = null;
+	if ( ! isset ($input['manual_mode'] ) )
+	$input['manual_mode'] = null;
 	if ( ! isset ($input['estyle']) )
 	$input['estyle'] = 'excerpt';
 	// Say our second option must be safe text with no HTML tags
@@ -174,6 +182,7 @@ function staffer_taxonomy () {
 		$stafferslug = $stafferoptions['slug'];
 	}
 	$taxslug = $stafferslug . '/department';
+
 	register_taxonomy(
 		'department',
 		'staff',
@@ -204,6 +213,12 @@ function create_staff_cpt_staffer() {
 	'pages'               => true,
 	'feeds'               => true,
 	);
+
+	if ( isset( $stafferoptions['manual_mode'] ) ) {
+		$archive = false;
+	} else {
+		$archive = true;
+	}
 	register_post_type('staff', array(
 		'labels' => array(
 		'name' => $stafferlabel,
@@ -219,7 +234,7 @@ function create_staff_cpt_staffer() {
 		'not_found_in_trash' => 'No Staff Members in Trash',
 		),
 		'public' => true,
-		'has_archive' => true,
+		'has_archive' => $archive,
 		'show_in_menu' => true,
 		'menu_order' => '4',
 		'rewrite' => $rewrite,
@@ -312,18 +327,23 @@ add_action('save_post_staff', 'staffer_staff_save_postdata');
 
 // sets template override for custom template use
 function staffer_staff_templates( $template ) {
-    $post_types = array( 'staff' );
-    $staff_tax = 'department';
-    if ( is_post_type_archive( $post_types ) && ! file_exists( get_stylesheet_directory() . '/archive-staff.php' ) ) {
-        $template = plugin_dir_path (__FILE__) . 'archive-staff.php';
-    }
-    if ( is_singular( $post_types ) && ! file_exists( get_stylesheet_directory() . '/single-staff.php' ) ) {
-        $template = plugin_dir_path (__FILE__) . 'single-staff.php';
-    }
-    if ( is_tax( $staff_tax ) && ! file_exists( get_stylesheet_directory() . '/taxonomy-staffer-department.php' ) ) {
-        $template = plugin_dir_path (__FILE__) . 'taxonomy-staffer-department.php';
-    }
-    return $template;
+	$post_types = array( 'staff' );
+	$staff_tax = 'department';
+	if ( is_post_type_archive( $post_types ) && ! file_exists( get_stylesheet_directory() . '/archive-staff.php' ) ) {
+		$template = plugin_dir_path (__FILE__) . 'archive-staff.php';
+	}
+	if ( is_singular( $post_types ) && ! file_exists( get_stylesheet_directory() . '/single-staff.php' ) ) {
+		$template = plugin_dir_path (__FILE__) . 'single-staff.php';
+	}
+
+	$staffer_options = get_option ('staffer');
+
+	if ( !isset ( $staffer_options['manual_mode'] ) ) {
+		if ( is_tax( $staff_tax ) && ! file_exists( get_stylesheet_directory() . '/taxonomy-staffer-department.php' ) ) {
+			$template = plugin_dir_path (__FILE__) . 'taxonomy-staffer-department.php';
+		}
+	}
+	return $template;
 }
 add_filter( 'template_include', 'staffer_staff_templates' );
 
@@ -373,20 +393,27 @@ add_action ('after_setup_theme', 'staffer_thumbnail_check' );
 // adds link to main staff archive
 // too many people confused about accessing the page
 function staffer_admin_menu() {
-    global $submenu;
-    $url = home_url('/');
-    $stafferoptions = get_option('staffer');
-	if ( $stafferoptions['slug'] == '' ) {
-		$slug = 'staff';
+	$stafferoptions = get_option ('staffer');
+	if ( ! isset( $stafferoptions['manual_mode'] ) ) {
+
+		global $submenu;
+		$url = home_url('/');
+		$stafferoptions = get_option('staffer');
+		if ( $stafferoptions['slug'] == '' ) {
+			$slug = 'staff';
+		} else {
+			$slug = $stafferoptions['slug'];
+		}
+		if ( get_option ('permalink_structure') ) {
+		$url = $url . $slug;
+		} else {
+			$url = $url . '?post_type=staff';
+		}
+		$submenu['edit.php?post_type=staff'][] = array(__('View Staff Page', 'staffer'), 'manage_options', $url);
+
 	} else {
-		$slug = $stafferoptions['slug'];
+		// nah
 	}
-	if ( get_option ('permalink_structure') ) {
-	$url = $url . $slug;
-	} else {
-		$url = $url . '?post_type=staff';
-	}
-    $submenu['edit.php?post_type=staff'][] = array(__('View Staff Page', 'staffer'), 'manage_options', $url);
 }
 add_action('admin_menu', 'staffer_admin_menu');
 
@@ -411,3 +438,82 @@ $perpage = $stafferoptions['perpage'];
 if ($perpage != '' ) {
 	add_action ('pre_get_posts', 'staffer_per_page_mod' );
 }
+
+// adds staff shortcode
+function staffer_shortcode( $atts ) {
+	ob_start();
+	extract( shortcode_atts( array (
+		'order' => 'DESC',
+		'orderby' => 'date',
+		'number' => -1,
+		'department' => '',
+	), $atts ) );
+
+	if ( $department != '' ) { 
+		$tax_query = array ( 
+			array (
+				'taxonomy'	=> 'department',
+				'field'		=> 'slug',
+				'terms'		=> $department,
+				),
+			);
+	} else {
+		$tax_query = null;
+	}
+	$args = array(
+		'post_type' => 'staff',
+		'order' => $order,
+		'orderby' => $orderby,
+		'posts_per_page' => $number,
+		'tax_query' => $tax_query,
+	);
+	$staff_query = new WP_Query( $args );
+	if ( $staff_query->have_posts() ) { 
+		global $post;
+		$stafferoptions = get_option ( 'staffer' );
+
+	if (isset ($stafferoptions['gridlayout']) ) { ?>
+		<ul class="staffer-archive-grid">
+			<?php } else { ?>
+				<ul class="staffer-archive-list">
+				<?php }
+
+			while ( $staff_query->have_posts() ) : $staff_query->the_post(); ?>
+			<li>
+				<header class="staffer-staff-header">
+				<h3 class="staffer-staff-title"><a href="<?php the_permalink(); ?>">
+					<?php echo the_title(); ?>
+					</a>
+				</h3>
+				<?php
+				if ( get_post_meta ($post->ID,'staffer_staff_title', true) != '' ) {
+					echo '<em>';
+					echo get_post_meta ($post->ID,'staffer_staff_title', true) . '</em><br>';
+					}
+					?>
+				
+				</header>
+					<div class="staff-content">
+				<?php if (isset ($stafferoptions['gridlayout']) ) { ?>
+					<?php the_post_thumbnail ( 'medium', array ('class' => 'aligncenter') ); ?>
+						<?php } else { ?>
+						<?php the_post_thumbnail ( 'medium', array ('class' => 'alignleft') ); ?>
+						<?php }
+						if ($stafferoptions['estyle'] == null or $stafferoptions['estyle'] == 'excerpt' ) {
+							the_excerpt();
+						} elseif ($stafferoptions['estyle'] == 'full' ) {
+							the_content();
+						} elseif ($stafferoptions['estyle'] == 'none' ) {
+							// nothing to see here
+						} 
+						?>
+					</div>
+				</li>
+			<?php endwhile;
+			wp_reset_postdata(); ?>
+		</ul>
+	<?php $output = ob_get_clean();
+	return $output;
+	}	
+}
+add_shortcode( 'staffer', 'staffer_shortcode' );
